@@ -3,8 +3,10 @@ class ImageContainer {
 	constructor(options) {
 		this._image = null;
 		this._options = options;
+		this._isImageViewer = 2;
+		this._imageViewer = null;
 
-		// Track transformation state.
+		// Track transformation state.  (Used exclusively for animated transitions)
 		this._scale = 1;
 		this._degreesOfRotation = 0;
 		this._orientation = "up";
@@ -122,6 +124,12 @@ class ImageContainer {
 	}
 
 	rotateImage(degrees) {
+		if (this._isImageViewerPage())
+		{
+			this._imageViewer.rotateImage(degrees);
+			return;
+		}
+		
 		this._doTransformation(() => {
 			this._image.style.transform = this._image.style.transform + ` rotate(${degrees}deg)`;
 
@@ -151,6 +159,12 @@ class ImageContainer {
 	}
 
 	zoomImage(percent) {
+		if (this._isImageViewerPage())
+		{
+			this._imageViewer.zoomImage(percent);
+			return;
+		}
+		
 		this._doTransformation(() => {
 			this._image.style.transform = this._image.style.transform + ` scale(${percent / 100})`;
 
@@ -161,6 +175,12 @@ class ImageContainer {
 	}
 
 	flipImage(sx, sy) {
+		if (this._isImageViewerPage())
+		{
+			this._imageViewer.flipImage(sx, sy);
+			return;
+		}
+		
 		this._doTransformation(() => {
 			this._image.style.transform = this._image.style.transform + ` scale(${sx}, ${sy})`;
 
@@ -176,6 +196,12 @@ class ImageContainer {
 	}
 
 	resetTransformation(transformation) {
+		if (this._isImageViewerPage())
+		{
+			this._imageViewer.resetTransformation(transformation);
+			return;
+		}
+		
 		const transformationRegExp = new RegExp(transformation + '\\((-|\\w|\\.|,|\\s)*\\)', 'gi');
 		const translateRegExp = new RegExp('translate\\((-|\\w|\\.|,|\\s)*\\)', 'gi');
 		const matchedTransformations = (this._image.style.transform.match(transformationRegExp) || []).length;
@@ -205,6 +231,12 @@ class ImageContainer {
 	}
 
 	resetAllTransformations() {
+		if (this._isImageViewerPage())
+		{
+			this._imageViewer.resetAllTransformations();
+			return;
+		}
+		
 		this._undoTransformation(() => this._image.style.transform = null, 9999);
 		this._image.dataset.numOfTransformations = 0;
 		this._image.style.boxShadow = null;
@@ -214,5 +246,24 @@ class ImageContainer {
 		this._orientation = "up";
 		this._scale = 1;
 		this._isFlipped = false;
+	}
+	
+	_isImageViewerPage() {
+		if (this._isImageViewer == 2)
+		{
+			const bodyElement = this._image.parentElement;
+			//check for the HTML structure of the image viewer page
+			//body tag has exactly one image inside and no other nodes
+			if (bodyElement && bodyElement.tagName === "BODY" && bodyElement.childNodes.length == 1)
+			{
+				this._isImageViewer = 1;
+				this._imageViewer = new ImageViewer();
+			}
+			else
+			{
+				this._isImageViewer = 0;
+			}
+		}
+		return this._isImageViewer;
 	}
 }
